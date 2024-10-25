@@ -26,6 +26,7 @@ export async function trimAndMerge(inputPath, outputPath, segments) {
 
 		await new Promise((resolve, reject) => {
 			ffmpeg(inputPath)
+				.format("mp4")
 				.setStartTime(start)
 				.duration(duration)
 				.output(tempPath)

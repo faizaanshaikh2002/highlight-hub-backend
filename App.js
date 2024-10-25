@@ -1,9 +1,12 @@
+import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
-import dotenv from "dotenv";
 import { trimAndMerge } from "./functions/trimAndMerge.js";
 import { fileURLToPath } from "url";
 import path from "path";
+import { convertVideoToAudio } from "./functions/videoToAudio.js";
+import { transcribeAudio } from "./functions/transcribe.js";
+import { createTrailerForGenre } from "./functions/trailer.js";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -13,17 +16,24 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
-app.get("/", async (req, res) => {
-	const inputVideoPath = path.join(__dirname, "video.mp4");
-	const outputVideoPath = path.join(__dirname, "output_merged.mp4");
-	const segments = [
-		{ start: "00:00:10", duration: 3 },
-		{ start: "00:01:00", duration: 5 },
-		{ start: "00:02:30", duration: 2 },
-		{ start: "00:00:10", duration: 3 },
-	];
+const inputVideoPath = path.join(__dirname, "./assets/input.mkv");
 
-	trimAndMerge(inputVideoPath, outputVideoPath, segments);
+app.get("/", async (req, res) => {
+	// 1. Video to Audio
+	const audio = await convertVideoToAudio(inputVideoPath);
+
+	// 2. Transcribe Audio
+	const srtText = await transcribeAudio(audio);
+
+	// 3. Get Relevant Transcriptions
+	const scenes = await createTrailerForGenre(["informative"], srtText);
+
+	if (!scenes.length) return res.send("NO Scenes to show!");
+
+	// 4. Cut and Merge relevent transcriptions
+	console.log(scenes);
+
+	await trimAndMerge(inputVideoPath, "output.mp4", scenes);
 
 	res.send("Welcome to the Express CRUD API!");
 });
