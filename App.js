@@ -1,17 +1,30 @@
-import express from "express";
-import { createTrailerForGenre } from "./functions/trailer.js";
-import dotenv from "dotenv";
-
 dotenv.config();
+import express from "express";
+import dotenv from "dotenv";
+import { trimAndMerge } from "./functions/trimAndMerge.js";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
+const __dirname = path.dirname(__filename); // get the name of the directory
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(express.json());
 
-// Basic route
 app.get("/", async (req, res) => {
-	await createTrailerForGenre("romcom");
+	const inputVideoPath = path.join(__dirname, "video.mp4");
+	const outputVideoPath = path.join(__dirname, "output_merged.mp4");
+	const segments = [
+		{ start: "00:00:10", duration: 3 },
+		{ start: "00:01:00", duration: 5 },
+		{ start: "00:02:30", duration: 2 },
+		{ start: "00:00:10", duration: 3 },
+	];
+
+	trimAndMerge(inputVideoPath, outputVideoPath, segments);
+
 	res.send("Welcome to the Express CRUD API!");
 });
 
